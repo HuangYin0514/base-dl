@@ -1,0 +1,5 @@
+# python 生成的编译文件
+*.pyc
+
+# 数据集文件
+datasets/*
