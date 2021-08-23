@@ -1,5 +1,9 @@
 # python 生成的编译文件
 *.pyc
+__pycache__/
 
 # 数据集文件
-datasets/*
+datasets/
+
+# 保存的文件
+checkpoints/
