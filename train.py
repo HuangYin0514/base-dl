@@ -1,7 +1,4 @@
-import time
 from options.train_options import TrainOptions
-
-
 
 
 if __name__ == '__main__':
