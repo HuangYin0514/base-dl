@@ -5,5 +5,4 @@ __pycache__/
 # 数据集文件
 datasets/
 
-# 保存的文件
 checkpoints/
