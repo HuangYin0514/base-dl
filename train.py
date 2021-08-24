@@ -1,4 +1,5 @@
 import os
+import glob
 
 import torch
 import torch.nn as nn
@@ -51,13 +52,10 @@ test_transforms = transforms.Compose([
     transforms.ToTensor()
     ])
 
-
-import glob
-
 # data loader
 train_dir = './datasets/dogVScat/train'
 test_dir = 'datasets/dogVScat/test'
-batch_size=2
+batch_size=64
 
 train_list = glob.glob(os.path.join(train_dir,'*.jpg'))
 test_list = glob.glob(os.path.join(test_dir, '*.jpg'))
@@ -109,6 +107,7 @@ def train(epoch):
         acc = ((output.argmax(dim=1) == label).float().mean())
         epoch_accuracy += acc/len(train_loader)
         epoch_loss += loss/len(train_loader)
+        print(epoch_loss)
         
     print('Epoch : {}, train accuracy : {}, train loss : {}'.format(epoch+1, epoch_accuracy,epoch_loss))
 
