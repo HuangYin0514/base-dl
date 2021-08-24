@@ -21,8 +21,8 @@ if __name__ == '__main__':
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
 
-    # data============================================================================================================
-    #data Augumentation
+    # data ============================================================================================================
+    # data Augumentation
     train_transforms =  transforms.Compose([
             transforms.Resize((224, 224)),
             transforms.RandomResizedCrop(224),
@@ -48,6 +48,7 @@ if __name__ == '__main__':
 
     import glob
 
+    # data loader
     train_dir = './datasets/dogVScat/train'
     test_dir = 'datasets/dogVScat/test'
     batch_size=2
@@ -64,4 +65,7 @@ if __name__ == '__main__':
     train_loader = torch.utils.data.DataLoader(dataset = train_data, batch_size=batch_size, shuffle=True )
     test_loader = torch.utils.data.DataLoader(dataset = test_data, batch_size=batch_size, shuffle=True)
 
+    # model ============================================================================================================
+
+    
     
