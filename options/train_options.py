@@ -1,7 +1,7 @@
 
 import os
 import argparse
-from util import util
+from utils import util
 
 
 class TrainOptions():

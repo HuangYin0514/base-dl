@@ -1,9 +1,10 @@
 import os
 import torch
+import torchvision.transforms as transforms
 
 from options.train_options import TrainOptions
-import torchvision.transforms as transforms
 from data.cat_dog import CatAndDog
+from models import *
 
 if __name__ == '__main__':
     # opt ==============================================================================
