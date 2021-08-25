@@ -8,7 +8,7 @@ import torchvision.transforms as transforms
 import torch.nn.functional as F
 
 from options.train_options import TrainOptions
-from data.cat_dog import CatAndDog
+from data import *
 from models import *
 
 
