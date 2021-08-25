@@ -113,17 +113,17 @@ def train(epoch):
 
 
 def test(epoch):
-    global best_acc
     net.eval()
     for data, fileid in test_loader:
         data = data.to(device)
         preds = net(data)
         preds_list = F.softmax(preds, dim=1)[:, 1].tolist()
     
-    
-start_epoch = 1
-for epoch in range(start_epoch, start_epoch+200):
-    train(epoch)
-    test(epoch)
-    # scheduler.step()
+
+if __name__ == '__main__':
+    epoch = 1
+    for epoch in range(epoch, epoch+200):
+        train(epoch)
+        test(epoch)
+        # scheduler.step()
     
