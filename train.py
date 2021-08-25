@@ -101,7 +101,9 @@ def train(epoch):
         acc = ((output.argmax(dim=1) == label).float().mean())
         epoch_accuracy += acc/len(train_loader)
         epoch_loss += loss/len(train_loader)
-        print('Training Loss: {:.4f}'.format(epoch_loss))
+
+
+        # print('Training Loss: {:.4f}'.format(epoch_loss))
 
     print('Epoch : {}, train accuracy : {}, train loss : {}'.format(
         epoch+1, epoch_accuracy, epoch_loss))
