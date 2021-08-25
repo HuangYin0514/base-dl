@@ -26,6 +26,7 @@ class TrainOptions():
         parser.add_argument('--img_width', type=int, default=224, help='width of the input image')
         parser.add_argument('--train_dir', type=str, default='./datasets/dogVScat/train', help='train dataset dir')
         parser.add_argument('--test_dir', type=str, default='./datasets/dogVScat/test', help='test dataset dir')
+        parser.add_argument('--data_dir', type=str, default='./datasets/hymenoptera_data/', help='data_dir')
         parser.add_argument('--batch_size', default=128, type=int, help='batch size')
 
         # Optimizer
@@ -33,7 +34,7 @@ class TrainOptions():
 
         # train
         parser.add_argument('--start_epoch', type=int, default=1, help='start epoch')
-        parser.add_argument('--epoch_num', type=int, default=1, help='start epoch')
+        parser.add_argument('--num_epochs', type=int, default=1, help='num epochs')
 
 
 
