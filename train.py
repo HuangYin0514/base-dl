@@ -12,14 +12,13 @@ from data import *
 from models import *
 
 
-
 # opt ==============================================================================
 opt = TrainOptions().parse()
 
 # env setting ==============================================================================
 # Fix random seed
-torch.manual_seed(1)
-torch.cuda.manual_seed_all(1)
+torch.manual_seed(opt.random_seed)
+torch.cuda.manual_seed_all(opt.random_seed)
 
 # speed up compution
 torch.backends.cudnn.benchmark = True
@@ -30,42 +29,37 @@ device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
 # data ============================================================================================================
 # data Augumentation
-train_transforms =  transforms.Compose([
-        transforms.Resize((224, 224)),
-        transforms.RandomResizedCrop(224),
-        transforms.RandomHorizontalFlip(),
-        transforms.ToTensor(),
-    ])
+train_transforms = transforms.Compose([
+    transforms.Resize((opt.img_height, opt.img_width)),
+    transforms.RandomHorizontalFlip(),
+    transforms.ToTensor(),
+])
 
 val_transforms = transforms.Compose([
-        transforms.Resize((224, 224)),
-        transforms.RandomResizedCrop(224),
-        transforms.RandomHorizontalFlip(),
-        transforms.ToTensor(),
-    ])
+    transforms.Resize((opt.img_height, opt.img_width)),
+    transforms.RandomHorizontalFlip(),
+    transforms.ToTensor(),
+])
 
 
-test_transforms = transforms.Compose([   
-    transforms.Resize((224, 224)),
-    transforms.RandomResizedCrop(224),
+test_transforms = transforms.Compose([
+    transforms.Resize((opt.img_height, opt.img_width)),
     transforms.RandomHorizontalFlip(),
     transforms.ToTensor()
-    ])
+])
 
 # data loader
-train_dir = './datasets/dogVScat/train'
-test_dir = 'datasets/dogVScat/test'
-batch_size=64
-
-train_list = glob.glob(os.path.join(train_dir,'*.jpg'))
-test_list = glob.glob(os.path.join(test_dir, '*.jpg'))
+train_list = glob.glob(os.path.join(opt.train_dir, '*.jpg'))
+test_list = glob.glob(os.path.join(opt.test_dir, '*.jpg'))
 
 train_data = CatAndDog(train_list, transform=train_transforms)
 test_data = CatAndDog(test_list, transform=test_transforms)
 
 
-train_loader = torch.utils.data.DataLoader(dataset = train_data, batch_size=batch_size, shuffle=True )
-test_loader = torch.utils.data.DataLoader(dataset = test_data, batch_size=batch_size, shuffle=True)
+train_loader = torch.utils.data.DataLoader(
+    dataset=train_data, batch_size=opt.batch_size, shuffle=True)
+test_loader = torch.utils.data.DataLoader(
+    dataset=test_data, batch_size=opt.batch_size, shuffle=True)
 
 # model ============================================================================================================
 net = Cnn()
@@ -77,7 +71,7 @@ if device == 'cuda':
 criterion = nn.CrossEntropyLoss()
 
 # optimizer ============================================================================================================
-optimizer = optim.Adam(params = net.parameters(),lr=0.001)
+optimizer = optim.Adam(params=net.parameters(), lr=opt.lr)
 
 
 # scheduler ============================================================================================================
@@ -92,38 +86,27 @@ def train(epoch):
     net.train()
     epoch_loss = 0
     epoch_accuracy = 0
-    
+
     for data, label in train_loader:
         data = data.to(device)
         label = label.to(device)
-        
+
         output = net(data)
         loss = criterion(output, label)
-        
+
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
-        
+
         acc = ((output.argmax(dim=1) == label).float().mean())
         epoch_accuracy += acc/len(train_loader)
         epoch_loss += loss/len(train_loader)
-        print(epoch_loss)
-        
-    print('Epoch : {}, train accuracy : {}, train loss : {}'.format(epoch+1, epoch_accuracy,epoch_loss))
+        print('Training Loss: {:.4f}'.format(epoch_loss))
 
+    print('Epoch : {}, train accuracy : {}, train loss : {}'.format(
+        epoch+1, epoch_accuracy, epoch_loss))
 
-def test(epoch):
-    net.eval()
-    for data, fileid in test_loader:
-        data = data.to(device)
-        preds = net(data)
-        preds_list = F.softmax(preds, dim=1)[:, 1].tolist()
-    
 
 if __name__ == '__main__':
-    epoch = 1
-    for epoch in range(epoch, epoch+200):
+    for epoch in range(opt.start_epoch, opt.start_epoch+opt.epoch_num):
         train(epoch)
-        test(epoch)
-        # scheduler.step()
-    
