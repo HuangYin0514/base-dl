@@ -62,7 +62,7 @@ test_loader = torch.utils.data.DataLoader(
     dataset=test_data, batch_size=opt.batch_size, shuffle=True)
 
 # model ============================================================================================================
-net = Cnn()
+net = Resnet18Custom()
 net = net.to(device)
 if device == 'cuda':
     net = torch.nn.DataParallel(net)
