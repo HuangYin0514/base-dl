@@ -36,11 +36,7 @@ class TrainOptions():
         parser.add_argument('--start_epoch', type=int, default=1, help='start epoch')
         parser.add_argument('--num_epochs', type=int, default=1, help='num epochs')
 
-
-
         self.opt = parser.parse_args()
-        self.print_options(self.opt)
-
         return self.opt 
 
 
