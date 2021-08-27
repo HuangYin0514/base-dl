@@ -1,2 +1,2 @@
 from .cnn import *
-from .resnet18 import *
+from .Resnet18Custom import *
