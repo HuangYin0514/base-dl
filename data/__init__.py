@@ -1,1 +1,0 @@
-from .cat_dog import *
