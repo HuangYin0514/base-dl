@@ -10,14 +10,15 @@ import torchvision.transforms as T
 import torch.nn.functional as F
 from torchvision import datasets
 
-from data import *
 from models import *
-
+from util import util
 
 # opt ==============================================================================
 parser = argparse.ArgumentParser(description="Person ReID Frame")
 # base
 parser.add_argument("--checkpoints_dir", type=str, default="./checkpoints")
+parser.add_argument("--name", type=str, default="hymenoptera")
+parser.add_argument("--phase", type=str, default="train")
 # env setting
 parser.add_argument("--random_seed", type=int, default="1")
 # data
@@ -36,6 +37,8 @@ parser.add_argument("--start_epoch", type=int, default=1)
 parser.add_argument("--num_epochs", type=int, default=1)
 # parse
 opt = parser.parse_args()
+
+util.print_options(opt)
 
 # env setting ==============================================================================
 # Fix random seed
@@ -90,21 +93,27 @@ optimizer = optim.Adam(params=model.parameters(), lr=opt.lr)
 # save dir path ============================================================================================================
 
 # Training and test ============================================================================================================
-
-
 def train(epoch):
-    # model.train()
+    model.train()
     for batch_idx, (data, labels) in enumerate(train_loader):
         data, labels = data.to(device), labels.to(device)
+        # net ---------------------
         optimizer.zero_grad()
         output = model(data)
         loss = criterion(output, labels)
         loss.backward()
         optimizer.step()
+        # --------------------------
         if batch_idx % 1 == 0:
-            print('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(
-                epoch, batch_idx * len(data), len(train_loader.dataset),
-                100. * batch_idx / len(train_loader), loss.item()))
+            print(
+                "Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}".format(
+                    epoch,
+                    batch_idx * len(data),
+                    len(train_loader.dataset),
+                    100.0 * batch_idx / len(train_loader),
+                    loss.item(),
+                )
+            )
     print("is ok !")
 
 
