@@ -14,12 +14,10 @@ from models import *
 from util import util, Logger
 
 # opt ==============================================================================
-parser = argparse.ArgumentParser(description="Person ReID Frame")
-# base
+parser = argparse.ArgumentParser(description="Base Dl")
+# base (env setting)
 parser.add_argument("--checkpoints_dir", type=str, default="./checkpoints")
 parser.add_argument("--name", type=str, default="hymenoptera")
-parser.add_argument("--phase", type=str, default="train")
-# env setting
 parser.add_argument("--random_seed", type=int, default="1")
 # data
 parser.add_argument("--img_height", type=int, default=12)
@@ -29,15 +27,15 @@ parser.add_argument(
 )
 parser.add_argument("--test_dir", type=str, default="./datasets/hymenoptera_data/val")
 parser.add_argument("--batch_size", default=128, type=int)
+parser.add_argument("--test_batch_size", default=128, type=int)
 parser.add_argument("--num_workers", default=0, type=int)
 # Optimizer
 parser.add_argument("--lr", type=float, default=0.1)
 # train
-parser.add_argument("--start_epoch", type=int, default=1)
 parser.add_argument("--num_epochs", type=int, default=1)
+
 # parse
 opt = parser.parse_args()
-
 util.print_options(opt)
 
 # env setting ==============================================================================
@@ -54,7 +52,6 @@ device = "cuda" if torch.cuda.is_available() else "cpu"
 train_transforms = T.Compose(
     [
         T.Resize(((opt.img_height, opt.img_width)), interpolation=3),
-        T.RandomHorizontalFlip(),
         T.ToTensor(),
         T.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225]),
     ]
@@ -73,8 +70,10 @@ test_dataset = datasets.ImageFolder(root=opt.test_dir, transform=test_transforms
 train_loader = torch.utils.data.DataLoader(
     train_dataset, batch_size=opt.batch_size, shuffle=True, num_workers=opt.num_workers
 )
-class_names = train_dataset.classes
 
+test_loader = torch.utils.data.DataLoader(
+    test_dataset, batch_size=opt.test_batch_size, num_workers=opt.num_workers
+)
 # model ============================================================================================================
 model = Resnet18Custom()
 model = model.to(device)
@@ -106,9 +105,10 @@ def train():
 
     for epoch in range(opt.num_epochs):
         model.train()
-        # Training
+
         running_loss = 0.0
         running_corrects = 0
+
         for inputs, labels in train_loader:
             inputs, labels = inputs.to(device), labels.to(device)
             # net ---------------------
