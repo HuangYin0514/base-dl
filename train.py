@@ -1,18 +1,15 @@
 import os
-import glob
 import time
 import argparse
 
 import torch
-from torch.cuda import random
-import torch.nn as nn
 import torch.optim as optim
 import torchvision.transforms as T
 import torch.nn.functional as F
 from torchvision import datasets
 
 from models import *
-from util import util, logger, draw_curve
+from utils import util, logger, draw_curve
 
 # opt ==============================================================================
 parser = argparse.ArgumentParser(description="Base Dl")
@@ -151,6 +148,7 @@ def train():
                 )
             )
 
+            # plot curve
             curve.x_train_epoch_loss.append(epoch + 1)
             curve.y_train_loss.append(epoch_loss)
             curve.x_train_epoch_acc.append(epoch + 1)
