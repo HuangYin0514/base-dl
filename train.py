@@ -8,6 +8,8 @@ import torchvision.transforms as T
 import torch.nn.functional as F
 from torchvision import datasets
 
+import numpy as np
+
 from models import *
 from utils import util, logger, draw_curve
 
@@ -36,6 +38,7 @@ util.print_options(opt)
 random_seed = 2021
 torch.manual_seed(random_seed)
 torch.cuda.manual_seed_all(random_seed)
+np.random.seed(random_seed)
 # speed up compution
 torch.backends.cudnn.benchmark = True
 # device
