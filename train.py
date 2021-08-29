@@ -4,6 +4,7 @@ import time
 import argparse
 
 import torch
+from torch.cuda import random
 import torch.nn as nn
 import torch.optim as optim
 import torchvision.transforms as T
@@ -18,7 +19,6 @@ parser = argparse.ArgumentParser(description="Base Dl")
 # base (env setting)
 parser.add_argument("--checkpoints_dir", type=str, default="./checkpoints")
 parser.add_argument("--name", type=str, default="hymenoptera")
-parser.add_argument("--random_seed", type=int, default="1")
 # data
 parser.add_argument("--img_height", type=int, default=4)
 parser.add_argument("--img_width", type=int, default=4)
@@ -40,12 +40,17 @@ util.print_options(opt)
 
 # env setting ==============================================================================
 # Fix random seed
-torch.manual_seed(opt.random_seed)
-torch.cuda.manual_seed_all(opt.random_seed)
+random_seed = 1
+torch.manual_seed(random_seed)
+torch.cuda.manual_seed_all(random_seed)
 # speed up compution
 torch.backends.cudnn.benchmark = True
 # device
 device = "cuda" if torch.cuda.is_available() else "cpu"
+# save dir path
+save_dir_path = os.path.join(opt.checkpoints_dir, opt.name)
+# Logger instance
+logger = Logger.Logger(save_dir_path)
 
 # data ============================================================================================================
 # data Augumentation
@@ -89,15 +94,11 @@ optimizer = optim.Adam(params=model.parameters(), lr=opt.lr)
 # scheduler ============================================================================================================
 scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=0.1)
 
-# save dir path ============================================================================================================
-save_dir_path = os.path.join(opt.checkpoints_dir, opt.name)
 
 # Training and test ============================================================================================================
 def train():
     start_time = time.time()
 
-    # Logger instance
-    logger = Logger.Logger(save_dir_path)
     # logger.info('-' * 10)
     # logger.info(vars(opt))
     # logger.info(model)
@@ -105,7 +106,7 @@ def train():
 
     for epoch in range(opt.num_epochs):
         model.train()
-        
+
         running_loss = 0.0
         running_corrects = 0
 
@@ -116,7 +117,7 @@ def train():
             output = model(inputs)
 
             _, preds = torch.max(output, 1)
-            
+
             loss = criterion(output, labels)
 
             loss.backward()
@@ -126,8 +127,10 @@ def train():
             running_loss += loss.item() * inputs.size(0)
             running_corrects += torch.sum(preds == labels.data)
 
+        # scheduler
         scheduler.step()
 
+        # print train infomation
         if epoch % 1 == 0:
             epoch_loss = running_loss / len(train_loader.dataset)
             epoch_acc = running_corrects.double() / len(train_loader.dataset)
@@ -135,7 +138,7 @@ def train():
                 (opt.num_epochs - epoch) * (time.time() - start_time) / (epoch + 1)
             )
             logger.info(
-                "Epoch:{}/{} \tTrain Loss:{:.4f} \tEpoch Acc:{:.4f} \tETA:{:.0f}h{:.0f}m".format(
+                "Epoch:{}/{} \tTrain Loss:{:.4f} \tAcc:{:.4f} \tETA:{:.0f}h{:.0f}m".format(
                     epoch + 1,
                     opt.num_epochs,
                     epoch_loss,
@@ -145,7 +148,47 @@ def train():
                 )
             )
 
+        # test
+        if epoch % 1 == 0:
+            test(epoch)
+
     print("training is done !")
+
+
+def test(epoch):
+    model.eval()
+
+    test_loss = 0.0
+    test_corrects = 0
+
+    for inputs, labels in train_loader:
+        inputs, labels = inputs.to(device), labels.to(device)
+        # net ---------------------
+        output = model(inputs)
+
+        _, preds = torch.max(output, 1)
+
+        loss = criterion(output, labels)
+        # --------------------------
+
+        test_loss += loss.item() * inputs.size(0)
+        test_corrects += torch.sum(preds == labels.data)
+
+    # print test infomation
+    if epoch % 1 == 0:
+        epoch_loss = test_loss / len(test_loader.dataset)
+        epoch_acc = test_corrects.double() / len(test_loader.dataset)
+
+        logger.info(
+            "Epoch:{}/{} \tTest Loss:{:.4f} \tAcc:{:.4f}".format(
+                epoch + 1,
+                opt.num_epochs,
+                epoch_loss,
+                epoch_acc,
+            )
+        )
+
+    # print("test is done !")
 
 
 if __name__ == "__main__":
