@@ -35,7 +35,7 @@ util.print_options(opt)
 
 # env setting ==============================================================================
 # Fix random seed
-random_seed = 1
+random_seed = 2021
 torch.manual_seed(random_seed)
 torch.cuda.manual_seed_all(random_seed)
 # speed up compution
@@ -53,8 +53,8 @@ curve = draw_curve.Draw_Curve(save_dir_path)
 # data Augumentation
 train_transforms = T.Compose(
     [
-        # T.Resize(((opt.img_height, opt.img_width)), interpolation=3),
-        # T.RandomResizedCrop((opt.img_height, opt.img_width)),
+        T.Resize(((opt.img_height, opt.img_width)), interpolation=3),
+        T.RandomResizedCrop((opt.img_height, opt.img_width)),
         T.RandomResizedCrop(224),
         T.RandomHorizontalFlip(),
         T.ToTensor(),
@@ -63,8 +63,8 @@ train_transforms = T.Compose(
 )
 test_transforms = T.Compose(
     [
-        # T.Resize(((opt.img_height, opt.img_width)), interpolation=3),
-        T.Resize(256),
+        T.Resize(((opt.img_height, opt.img_width)), interpolation=3),
+        # T.Resize(256),
         T.CenterCrop(224),
         T.ToTensor(),
         T.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225]),
