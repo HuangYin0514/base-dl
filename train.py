@@ -1,6 +1,7 @@
 import os
 import time
 import argparse
+import random
 
 import torch
 import torch.optim as optim
@@ -38,7 +39,10 @@ util.print_options(opt)
 random_seed = 2021
 torch.manual_seed(random_seed)
 torch.cuda.manual_seed_all(random_seed)
-np.random.seed(random_seed)
+torch.cuda.manual_seed(random_seed)
+np.random.seed(random_seed)  # Numpy module.
+random.seed(random_seed)  # Python random module.
+torch.backends.cudnn.deterministic = True
 # speed up compution
 torch.backends.cudnn.benchmark = True
 # device
