@@ -195,8 +195,6 @@ def test(epoch):
             )
         )
 
-        curve.x_test_epoch_loss.append(epoch + 1)
-        curve.y_test_loss.append(epoch_acc)
         curve.x_test_epoch_acc.append(epoch + 1)
         curve.y_test_acc.append(epoch_acc)
 

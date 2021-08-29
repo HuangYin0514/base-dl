@@ -13,8 +13,6 @@ class Draw_Curve:
 
         self.x_train_epoch_loss = []
         self.y_train_loss = []
-        self.x_test_epoch_loss = []
-        self.y_test_loss = []
 
         self.x_train_epoch_acc = []
         self.y_train_acc = []
@@ -25,9 +23,6 @@ class Draw_Curve:
        
         self.ax0.plot(
             self.x_train_epoch_loss, self.y_train_loss, "rs-", markersize="2", label="train"
-        )
-        self.ax0.plot(
-            self.x_test_epoch_loss, self.y_test_loss, "bs-", markersize="2", label="test"
         )
         self.ax0.set_ylabel("Training")
         self.ax0.set_xlabel("Epoch")
