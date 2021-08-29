@@ -26,8 +26,6 @@ parser.add_argument("--test_dir", type=str, default="./datasets/hymenoptera_data
 parser.add_argument("--batch_size", default=128, type=int)
 parser.add_argument("--test_batch_size", default=128, type=int)
 parser.add_argument("--num_workers", default=0, type=int)
-# Optimizer
-parser.add_argument("--lr", type=float, default=0.001)
 # train
 parser.add_argument("--num_epochs", type=int, default=2)
 
@@ -37,9 +35,9 @@ util.print_options(opt)
 
 # env setting ==============================================================================
 # Fix random seed
-random_seed = 1
-torch.manual_seed(random_seed)
-torch.cuda.manual_seed_all(random_seed)
+# random_seed = 1
+# torch.manual_seed(random_seed)
+# torch.cuda.manual_seed_all(random_seed)
 # speed up compution
 torch.backends.cudnn.benchmark = True
 # device
@@ -56,7 +54,8 @@ curve = draw_curve.Draw_Curve(save_dir_path)
 train_transforms = T.Compose(
     [
         # T.Resize(((opt.img_height, opt.img_width)), interpolation=3),
-        T.RandomResizedCrop((opt.img_height, opt.img_width)),
+        # T.RandomResizedCrop((opt.img_height, opt.img_width)),
+        T.RandomResizedCrop(224),
         T.RandomHorizontalFlip(),
         T.ToTensor(),
         T.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225]),
@@ -93,7 +92,7 @@ criterion = F.cross_entropy
 
 # optimizer ============================================================================================================
 # optimizer = optim.Adam(params=model.parameters(), lr=opt.lr)
-optimizer = optim.SGD(model.parameters(), lr=opt.lr, momentum=0.9)
+optimizer = optim.SGD(model.parameters(), lr=0.001, momentum=0.9)
 
 # scheduler ============================================================================================================
 scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=7, gamma=0.1)
