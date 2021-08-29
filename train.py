@@ -55,14 +55,18 @@ curve = draw_curve.Draw_Curve(save_dir_path)
 # data Augumentation
 train_transforms = T.Compose(
     [
-        T.Resize(((opt.img_height, opt.img_width)), interpolation=3),
+        # T.Resize(((opt.img_height, opt.img_width)), interpolation=3),
+        T.RandomResizedCrop((opt.img_height, opt.img_width)),
+        T.RandomHorizontalFlip(),
         T.ToTensor(),
         T.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225]),
     ]
 )
 test_transforms = T.Compose(
     [
-        T.Resize(((opt.img_height, opt.img_width)), interpolation=3),
+        # T.Resize(((opt.img_height, opt.img_width)), interpolation=3),
+        T.Resize(256),
+        T.CenterCrop(224),
         T.ToTensor(),
         T.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225]),
     ]
@@ -88,10 +92,11 @@ if device == "cuda":
 criterion = F.cross_entropy
 
 # optimizer ============================================================================================================
-optimizer = optim.Adam(params=model.parameters(), lr=opt.lr)
+# optimizer = optim.Adam(params=model.parameters(), lr=opt.lr)
+optimizer = optim.SGD(model.parameters(), lr=opt.lr, momentum=0.9)
 
 # scheduler ============================================================================================================
-scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=30, gamma=0.1)
+scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=7, gamma=0.1)
 
 
 # Training and test ============================================================================================================
@@ -136,7 +141,7 @@ def train():
             time_remaining = (
                 (opt.num_epochs - epoch) * (time.time() - start_time) / (epoch + 1)
             )
-            
+
             logger.info(
                 "Epoch:{}/{} \tTrain Loss:{:.4f} \tAcc:{:.4f} \tETA:{:.0f}h{:.0f}m".format(
                     epoch + 1,
