@@ -20,8 +20,8 @@ parser.add_argument("--checkpoints_dir", type=str, default="./checkpoints")
 parser.add_argument("--name", type=str, default="hymenoptera")
 parser.add_argument("--random_seed", type=int, default="1")
 # data
-parser.add_argument("--img_height", type=int, default=12)
-parser.add_argument("--img_width", type=int, default=12)
+parser.add_argument("--img_height", type=int, default=4)
+parser.add_argument("--img_width", type=int, default=4)
 parser.add_argument(
     "--train_dir", type=str, default="./datasets/hymenoptera_data/train"
 )
@@ -32,7 +32,7 @@ parser.add_argument("--num_workers", default=0, type=int)
 # Optimizer
 parser.add_argument("--lr", type=float, default=0.1)
 # train
-parser.add_argument("--num_epochs", type=int, default=1)
+parser.add_argument("--num_epochs", type=int, default=2)
 
 # parse
 opt = parser.parse_args()
@@ -87,7 +87,7 @@ criterion = F.cross_entropy
 optimizer = optim.Adam(params=model.parameters(), lr=opt.lr)
 
 # scheduler ============================================================================================================
-# scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=20, gamma=0.1)
+scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=0.1)
 
 # save dir path ============================================================================================================
 save_dir_path = os.path.join(opt.checkpoints_dir, opt.name)
@@ -105,7 +105,7 @@ def train():
 
     for epoch in range(opt.num_epochs):
         model.train()
-
+        
         running_loss = 0.0
         running_corrects = 0
 
@@ -116,7 +116,7 @@ def train():
             output = model(inputs)
 
             _, preds = torch.max(output, 1)
-
+            
             loss = criterion(output, labels)
 
             loss.backward()
@@ -124,18 +124,22 @@ def train():
             # --------------------------
 
             running_loss += loss.item() * inputs.size(0)
-            # running_corrects += torch.sum(preds == labels.data)
+            running_corrects += torch.sum(preds == labels.data)
+
+        scheduler.step()
 
         if epoch % 1 == 0:
             epoch_loss = running_loss / len(train_loader.dataset)
+            epoch_acc = running_corrects.double() / len(train_loader.dataset)
             time_remaining = (
                 (opt.num_epochs - epoch) * (time.time() - start_time) / (epoch + 1)
             )
             logger.info(
-                "Epoch:{}/{} \tLoss:{:.4f} \tETA:{:.0f}h{:.0f}m".format(
+                "Epoch:{}/{} \tTrain Loss:{:.4f} \tEpoch Acc:{:.4f} \tETA:{:.0f}h{:.0f}m".format(
                     epoch + 1,
                     opt.num_epochs,
                     epoch_loss,
+                    epoch_acc,
                     time_remaining // 3600,
                     time_remaining / 60 % 60,
                 )
