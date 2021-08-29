@@ -91,7 +91,7 @@ criterion = F.cross_entropy
 optimizer = optim.Adam(params=model.parameters(), lr=opt.lr)
 
 # scheduler ============================================================================================================
-scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=1, gamma=0.1)
+scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=30, gamma=0.1)
 
 
 # Training and test ============================================================================================================
