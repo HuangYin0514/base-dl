@@ -33,9 +33,9 @@ util.print_options(opt)
 
 # env setting ==============================================================================
 # Fix random seed
-# random_seed = 2021
-# torch.manual_seed(random_seed)
-# torch.cuda.manual_seed_all(random_seed)
+random_seed = 2021
+torch.manual_seed(random_seed)
+torch.cuda.manual_seed_all(random_seed)
 # speed up compution
 torch.backends.cudnn.benchmark = True
 # device
