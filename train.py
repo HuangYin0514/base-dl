@@ -27,7 +27,7 @@ parser.add_argument("--batch_size", default=128, type=int)
 parser.add_argument("--test_batch_size", default=128, type=int)
 parser.add_argument("--num_workers", default=0, type=int)
 # Optimizer
-parser.add_argument("--lr", type=float, default=0.1)
+parser.add_argument("--lr", type=float, default=0.001)
 # train
 parser.add_argument("--num_epochs", type=int, default=2)
 
