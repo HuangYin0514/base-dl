@@ -168,7 +168,7 @@ def test(epoch):
     test_loss = 0.0
     test_corrects = 0
 
-    for inputs, labels in train_loader:
+    for inputs, labels in test_loader:
         inputs, labels = inputs.to(device), labels.to(device)
         # net ---------------------
         output = model(inputs)
