@@ -12,7 +12,7 @@ import torch.nn.functional as F
 from torchvision import datasets
 
 from models import *
-from util import util, Logger
+from util import util, logger, draw_curve
 
 # opt ==============================================================================
 parser = argparse.ArgumentParser(description="Base Dl")
@@ -50,7 +50,9 @@ device = "cuda" if torch.cuda.is_available() else "cpu"
 # save dir path
 save_dir_path = os.path.join(opt.checkpoints_dir, opt.name)
 # Logger instance
-logger = Logger.Logger(save_dir_path)
+logger = logger.Logger(save_dir_path)
+# draw curve instance
+curve = draw_curve.Draw_Curve(save_dir_path)
 
 # data ============================================================================================================
 # data Augumentation
@@ -102,7 +104,7 @@ def train():
     # logger.info('-' * 10)
     # logger.info(vars(opt))
     # logger.info(model)
-    logger.info("train starting...")
+    # logger.info("train starting...")
 
     for epoch in range(opt.num_epochs):
         model.train()
@@ -137,6 +139,7 @@ def train():
             time_remaining = (
                 (opt.num_epochs - epoch) * (time.time() - start_time) / (epoch + 1)
             )
+            
             logger.info(
                 "Epoch:{}/{} \tTrain Loss:{:.4f} \tAcc:{:.4f} \tETA:{:.0f}h{:.0f}m".format(
                     epoch + 1,
@@ -148,10 +151,16 @@ def train():
                 )
             )
 
+            curve.x_train_epoch_loss.append(epoch + 1)
+            curve.y_train_loss.append(epoch_loss)
+            curve.x_train_epoch_acc.append(epoch + 1)
+            curve.y_train_acc.append(epoch_acc)
+
         # test
         if epoch % 1 == 0:
             test(epoch)
 
+    curve.save_curve()
     print("training is done !")
 
 
@@ -187,6 +196,11 @@ def test(epoch):
                 epoch_acc,
             )
         )
+
+        curve.x_test_epoch_loss.append(epoch + 1)
+        curve.y_test_loss.append(epoch_acc)
+        curve.x_test_epoch_acc.append(epoch + 1)
+        curve.y_test_acc.append(epoch_acc)
 
     # print("test is done !")
 
