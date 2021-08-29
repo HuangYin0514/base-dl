@@ -53,7 +53,7 @@ curve = draw_curve.Draw_Curve(save_dir_path)
 # data Augumentation
 train_transforms = T.Compose(
     [
-        T.Resize(((opt.img_height, opt.img_width)), interpolation=3),
+        # T.Resize(((opt.img_height, opt.img_width)), interpolation=3),
         T.RandomResizedCrop((opt.img_height, opt.img_width)),
         # T.RandomResizedCrop(224),
         T.RandomHorizontalFlip(),
