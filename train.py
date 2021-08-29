@@ -17,14 +17,10 @@ parser = argparse.ArgumentParser(description="Base Dl")
 parser.add_argument("--checkpoints_dir", type=str, default="./checkpoints")
 parser.add_argument("--name", type=str, default="hymenoptera")
 # data
-parser.add_argument("--img_height", type=int, default=4)
-parser.add_argument("--img_width", type=int, default=4)
 parser.add_argument(
     "--train_dir", type=str, default="./datasets/hymenoptera_data/train"
 )
 parser.add_argument("--test_dir", type=str, default="./datasets/hymenoptera_data/val")
-parser.add_argument("--batch_size", default=224, type=int)
-parser.add_argument("--test_batch_size", default=224, type=int)
 parser.add_argument("--num_workers", default=0, type=int)
 # train
 parser.add_argument("--num_epochs", type=int, default=2)
@@ -54,7 +50,7 @@ curve = draw_curve.Draw_Curve(save_dir_path)
 train_transforms = T.Compose(
     [
         # T.Resize(((opt.img_height, opt.img_width)), interpolation=3),
-        T.RandomResizedCrop((opt.img_height, opt.img_width)),
+        T.RandomResizedCrop((224, 224)),
         # T.RandomResizedCrop(224),
         T.RandomHorizontalFlip(),
         T.ToTensor(),
