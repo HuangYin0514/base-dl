@@ -64,7 +64,7 @@ train_transforms = T.Compose(
 test_transforms = T.Compose(
     [
         # T.Resize(((opt.img_height, opt.img_width)), interpolation=3),
-        # T.Resize(256),
+        T.Resize(256),
         T.CenterCrop(224),
         T.ToTensor(),
         T.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225]),
