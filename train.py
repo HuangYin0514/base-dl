@@ -54,7 +54,7 @@ curve = draw_curve.Draw_Curve(save_dir_path)
 # data Augumentation
 train_transforms = T.Compose(
     [
-        T.Resize((224, 224), interpolation=3),
+        # T.Resize((224, 224), interpolation=3),
         T.RandomResizedCrop(224),
         T.RandomHorizontalFlip(),
         T.ToTensor(),
