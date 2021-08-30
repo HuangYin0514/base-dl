@@ -12,7 +12,7 @@ from torchvision import datasets
 import numpy as np
 
 from models import *
-from utils import util, logger, draw_curve
+from utils import util, logger, draw_curve, load_network
 
 # opt ==============================================================================
 parser = argparse.ArgumentParser(description="Base Dl")
@@ -166,7 +166,11 @@ def train():
         if epoch % 1 == 0:
             test(epoch)
 
+    # Save the loss curve
     curve.save_curve()
+    # Save final model weights
+    load_network.save_network(model, save_dir_path, 'final')
+
     print("training is done !")
 
 
