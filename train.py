@@ -29,6 +29,14 @@ parser.add_argument("--test_batch_size", default=128, type=int)
 parser.add_argument("--num_workers", default=0, type=int)
 # train
 parser.add_argument("--num_epochs", type=int, default=2)
+# other
+parser.add_argument("--RandomResizedCrop", type=int, default=2)
+parser.add_argument("--Resize", type=int, default=2)
+parser.add_argument("--CenterCrop", type=int, default=2)
+
+# RandomResizedCrop=224
+# Resize=256
+# CenterCrop=224
 
 # parse
 opt = parser.parse_args()
@@ -58,8 +66,7 @@ curve = draw_curve.Draw_Curve(save_dir_path)
 # data Augumentation
 train_transforms = T.Compose(
     [
-        # T.Resize((224, 224), interpolation=3),
-        T.RandomResizedCrop(224),
+        T.RandomResizedCrop(opt.RandomResizedCrop),
         T.RandomHorizontalFlip(),
         T.ToTensor(),
         T.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225]),
@@ -67,9 +74,8 @@ train_transforms = T.Compose(
 )
 test_transforms = T.Compose(
     [
-        # T.Resize(((opt.img_height, opt.img_width)), interpolation=3),
-        T.Resize(256),
-        T.CenterCrop(224),
+        T.Resize(opt.Resize),
+        T.CenterCrop(opt.CenterCrop),
         T.ToTensor(),
         T.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225]),
     ]
@@ -95,7 +101,6 @@ if device == "cuda":
 criterion = F.cross_entropy
 
 # optimizer ============================================================================================================
-# optimizer = optim.Adam(params=model.parameters(), lr=opt.lr)
 optimizer = optim.SGD(model.parameters(), lr=0.001, momentum=0.9)
 
 # scheduler ============================================================================================================
@@ -105,11 +110,6 @@ scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=7, gamma=0.1)
 # Training and test ============================================================================================================
 def train():
     start_time = time.time()
-
-    # logger.info('-' * 10)
-    # logger.info(vars(opt))
-    # logger.info(model)
-    # logger.info("train starting...")
 
     for epoch in range(opt.num_epochs):
         model.train()
