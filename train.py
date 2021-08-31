@@ -82,10 +82,10 @@ test_transforms = T.Compose(
     ]
 )
 # data loader'
-train_dataset = hymenoptera.Hymenoptera(root=opt.train_dir, transform=train_transforms)
-# test_dataset = hymenoptera.Hymenoptera(root=opt.test_dir, transform=test_transforms)
-# train_dataset = datasets.ImageFolder(root=opt.train_dir, transform=train_transforms)
-test_dataset = datasets.ImageFolder(root=opt.test_dir, transform=test_transforms)
+# train_dataset = hymenoptera.Hymenoptera(root=opt.train_dir, transform=train_transforms)
+test_dataset = hymenoptera.Hymenoptera(root=opt.test_dir, transform=test_transforms)
+train_dataset = datasets.ImageFolder(root=opt.train_dir, transform=train_transforms)
+# test_dataset = datasets.ImageFolder(root=opt.test_dir, transform=test_transforms)
 
 train_loader = torch.utils.data.DataLoader(
     train_dataset, batch_size=opt.batch_size, shuffle=True, num_workers=opt.num_workers
