@@ -1,5 +1,7 @@
 import glob
-import os.path as osp
+import os
+import os.path
+import sys
 
 from PIL import Image
 from torch.utils.data import Dataset
@@ -14,9 +16,9 @@ class Hymenoptera(Dataset):
 
         self.transform = transform
 
-        self.root_dir = osp.abspath(osp.expanduser(root))
+        self.root_dir = os.path.abspath(os.path.expanduser(root))
 
-        self.category2label = self._get_label()
+        self.category2label = self._get_label(self.root_dir)
 
         self._check_before_run()
 
@@ -36,25 +38,18 @@ class Hymenoptera(Dataset):
 
     def _check_before_run(self):
         """Check if all files are available before going deeper"""
-        if not osp.exists(self.root_dir):
+        if not os.path.exists(self.root_dir):
             raise RuntimeError("'{}' is not available".format(self.root_dir))
 
-    # 未来优化的地方，考虑reid网络中relabel形式
-    def _get_label(self):
-        # img_paths = glob.glob(osp.join(dir_path, "*", "*.jpg"))
-
-        # category_container = set()
-        # for img_path in img_paths:
-        #     category = img_path.split('/')[-2]
-        #     category_container.add(category)
-        # category2label = {
-        #     category: label for label, category in enumerate(category_container)
-        # }
-        category2label = {"ants": 0, "bees": 1}
-        return category2label
+    def _get_label(self, dir):
+        # Faster and available in Python 3.5 and above
+        classes = [d.name for d in os.scandir(dir) if d.is_dir()]
+        classes.sort()
+        class_to_idx = {classes[i]: i for i in range(len(classes))}
+        return class_to_idx
 
     def _process_dir(self, dir_path):
-        img_paths = glob.glob(osp.join(dir_path, "*", "*.jpg"))
+        img_paths = glob.glob(os.path.join(dir_path, "*", "*.jpg"))
 
         dataset = []
         for img_path in img_paths:
@@ -68,7 +63,7 @@ class Hymenoptera(Dataset):
         """Keep reading image until succeed.
         This can avoid IOError incurred by heavy IO process."""
         got_img = False
-        if not osp.exists(img_path):
+        if not os.path.exists(img_path):
             raise IOError("{} does not exist".format(img_path))
         while not got_img:
             try:
