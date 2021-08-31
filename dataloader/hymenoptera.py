@@ -50,7 +50,7 @@ class Hymenoptera(Dataset):
         # category2label = {
         #     category: label for label, category in enumerate(category_container)
         # }
-        category2label = {"ants": 1, "bees": 0}
+        category2label = {"ants": 0, "bees": 1}
         return category2label
 
     def _process_dir(self, dir_path):
