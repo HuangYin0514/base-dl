@@ -82,8 +82,8 @@ test_transforms = T.Compose(
     ]
 )
 # data loader'
-train_dataset = hymenoptera.Hymenoptera(root=opt.train_dir,mode="train" ,transform=train_transforms)
-test_dataset = hymenoptera.Hymenoptera(root=opt.test_dir, mode="val" ,transform=test_transforms)
+train_dataset = hymenoptera.Hymenoptera(root=opt.train_dir, transform=train_transforms)
+test_dataset = hymenoptera.Hymenoptera(root=opt.test_dir, transform=test_transforms)
 
 train_loader = torch.utils.data.DataLoader(
     train_dataset, batch_size=opt.batch_size, shuffle=True, num_workers=opt.num_workers
@@ -170,7 +170,7 @@ def train():
     # Save the loss curve
     curve.save_curve()
     # Save final model weights
-    load_network.save_network(model, save_dir_path, 'final')
+    load_network.save_network(model, save_dir_path, "final")
 
     print("training is done !")
 

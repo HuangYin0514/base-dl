@@ -4,17 +4,17 @@ import os.path as osp
 from PIL import Image
 from torch.utils.data import Dataset
 
+
 class Hymenoptera(Dataset):
 
     root_dir = ""
 
-    def __init__(self, root="", mode="", transform=None):
+    def __init__(self, root="", transform=None):
         super(Hymenoptera, self).__init__()
 
         self.transform = transform
 
         self.root_dir = osp.abspath(osp.expanduser(root))
-        # self.dataset_dir = osp.join(self.root_dir, mode)
 
         self.category2label = self._get_label()
 
@@ -64,7 +64,7 @@ class Hymenoptera(Dataset):
 
         return dataset
 
-    def _read_image(self,img_path):
+    def _read_image(self, img_path):
         """Keep reading image until succeed.
         This can avoid IOError incurred by heavy IO process."""
         got_img = False
