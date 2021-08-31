@@ -4,7 +4,7 @@ import matplotlib
 import matplotlib.pyplot as plt
 
 # Suppress pop-up windows during debugging
-matplotlib.use('TkAgg')
+matplotlib.use('agg')
 
 class Draw_Curve:
     def __init__(self, dir_path):
