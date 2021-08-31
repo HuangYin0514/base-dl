@@ -1,12 +1,17 @@
 import os
+
+import matplotlib
 import matplotlib.pyplot as plt
 
+# Suppress pop-up windows during debugging
+matplotlib.use('TkAgg')
 
 class Draw_Curve:
     def __init__(self, dir_path):
         self.dir_path = dir_path
         # Draw curve
-        self.fig = plt.figure()
+
+        self.fig = plt.figure(clear=True)
        
         self.ax0 = self.fig.add_subplot(121, title="loss")
         self.ax1 = self.fig.add_subplot(122, title="acc")
