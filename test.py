@@ -1,6 +1,7 @@
 
 import numpy as np
+from models import *
 
 if __name__ == '__main__':
-    print(np.abs(-2))
-    
+    model = resnet50(pretrained=True)    
+    print(model)
