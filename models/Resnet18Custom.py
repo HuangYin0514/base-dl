@@ -15,12 +15,69 @@ model_urls = {
 }
 
 
+
+def weights_init_kaiming(m):
+    classname = m.__class__.__name__
+    if classname.find('Linear') != -1:
+        nn.init.kaiming_normal_(m.weight, a=0, mode='fan_out')
+        nn.init.constant_(m.bias, 0.0)
+    elif classname.find('Conv') != -1:
+        nn.init.kaiming_normal_(m.weight, a=0, mode='fan_in')
+        if m.bias is not None:
+            nn.init.constant_(m.bias, 0.0)
+    elif classname.find('BatchNorm') != -1:
+        if m.affine:
+            nn.init.normal_(m.weight, 1.0, 0.02)
+            nn.init.constant_(m.bias, 0.0)
+
+
+def weights_init_classifier(m):
+    classname = m.__class__.__name__
+    if classname.find('Linear') != -1:
+        nn.init.normal_(m.weight, std=0.001)
+        if m.bias:
+            nn.init.constant_(m.bias, 0.0)
+
+
 def conv3x3(in_planes, out_planes, stride=1):
     "3x3 convolution with padding"
     return nn.Conv2d(
         in_planes, out_planes, kernel_size=3, stride=stride, padding=1, bias=False
     )
 
+
+def conv1x1(in_planes, out_planes, stride=1):
+    """1x1 convolution"""
+    return nn.Conv2d(in_planes, out_planes, kernel_size=1, stride=stride, bias=False)
+
+
+
+class BasicBlock(nn.Module):
+    expansion = 1
+
+    def __init__(self, in_planes, planes, stride=1):
+        super(BasicBlock, self).__init__()
+        self.conv1 = nn.Conv2d(
+            in_planes, planes, kernel_size=3, stride=stride, padding=1, bias=False)
+        self.bn1 = nn.BatchNorm2d(planes)
+        self.conv2 = nn.Conv2d(planes, planes, kernel_size=3,
+                               stride=1, padding=1, bias=False)
+        self.bn2 = nn.BatchNorm2d(planes)
+
+        self.shortcut = nn.Sequential()
+        if stride != 1 or in_planes != self.expansion*planes:
+            self.shortcut = nn.Sequential(
+                nn.Conv2d(in_planes, self.expansion*planes,
+                          kernel_size=1, stride=stride, bias=False),
+                nn.BatchNorm2d(self.expansion*planes)
+            )
+
+    def forward(self, x):
+        out = F.relu(self.bn1(self.conv1(x)))
+        out = self.bn2(self.conv2(out))
+        out += self.shortcut(x)
+        out = F.relu(out)
+        return out
 
 class Bottleneck(nn.Module):
     expansion = 4
@@ -140,4 +197,59 @@ def resnet50(pretrained=False):
         now_state_dict.update(pretrained_state_dict)
         model.load_state_dict(now_state_dict)
     return model
+
+
+
+
+class Resnet_Backbone(nn.Module):
+    def __init__(self):
+        super(Resnet_Backbone, self).__init__()
+
+        # backbone--------------------------------------------------------------------------
+        # change the model different from pcb
+        resnet = resnet50(pretrained=True)
+        # Modifiy the stride of last conv layer----------------------------
+        # resnet.layer4[0].downsample[0].stride = (1, 1)
+        # resnet.layer4[0].conv2.stride = (1, 1)
+        # Remove avgpool and fc layer of resnet------------------------------
+        self.resnet_conv1 = resnet.conv1
+        self.resnet_bn1 = resnet.bn1
+        self.resnet_relu = resnet.relu
+        self.resnet_maxpool = resnet.maxpool
+        self.resnet_layer1 = resnet.layer1
+        self.resnet_layer2 = resnet.layer2
+        self.resnet_layer3 = resnet.layer3
+        self.resnet_layer4 = resnet.layer4
+
+    def forward(self, x):
+        x = self.resnet_conv1(x)
+        x = self.resnet_bn1(x)
+        x = self.resnet_relu(x)
+        x = self.resnet_maxpool(x)
+        x = self.resnet_layer1(x)
+        x = self.resnet_layer2(x)
+        x = self.resnet_layer3(x)
+        x = self.resnet_layer4(x)
+        return x
+
+
+
+class Resnet_Classification(nn.Module):
+    def __init__(self):
+
+        super(Resnet_Classification, self).__init__()
+
+        # backbone--------------------------------------------------------------------------
+        self.backbone = Resnet_Backbone()
+        
+
+       
+
+    def forward(self, x):
+        batch_size = x.size(0)
+
+        # backbone(Tensor T) ========================================================================================
+        resnet_features = self.backbone(x)  # ([N, 2048, 24, 8])
+
+        return resnet_features
 
