@@ -8,4 +8,4 @@ if __name__ == '__main__':
     inputs = torch.randn(3,3,224,224)
     outputs = model(inputs)
     print(model)
-    print(outputs)
+    print(outputs.shape)

@@ -15,17 +15,16 @@ model_urls = {
 }
 
 
-
 def weights_init_kaiming(m):
     classname = m.__class__.__name__
-    if classname.find('Linear') != -1:
-        nn.init.kaiming_normal_(m.weight, a=0, mode='fan_out')
+    if classname.find("Linear") != -1:
+        nn.init.kaiming_normal_(m.weight, a=0, mode="fan_out")
         nn.init.constant_(m.bias, 0.0)
-    elif classname.find('Conv') != -1:
-        nn.init.kaiming_normal_(m.weight, a=0, mode='fan_in')
+    elif classname.find("Conv") != -1:
+        nn.init.kaiming_normal_(m.weight, a=0, mode="fan_in")
         if m.bias is not None:
             nn.init.constant_(m.bias, 0.0)
-    elif classname.find('BatchNorm') != -1:
+    elif classname.find("BatchNorm") != -1:
         if m.affine:
             nn.init.normal_(m.weight, 1.0, 0.02)
             nn.init.constant_(m.bias, 0.0)
@@ -33,7 +32,7 @@ def weights_init_kaiming(m):
 
 def weights_init_classifier(m):
     classname = m.__class__.__name__
-    if classname.find('Linear') != -1:
+    if classname.find("Linear") != -1:
         nn.init.normal_(m.weight, std=0.001)
         if m.bias:
             nn.init.constant_(m.bias, 0.0)
@@ -51,25 +50,31 @@ def conv1x1(in_planes, out_planes, stride=1):
     return nn.Conv2d(in_planes, out_planes, kernel_size=1, stride=stride, bias=False)
 
 
-
 class BasicBlock(nn.Module):
     expansion = 1
 
     def __init__(self, in_planes, planes, stride=1):
         super(BasicBlock, self).__init__()
         self.conv1 = nn.Conv2d(
-            in_planes, planes, kernel_size=3, stride=stride, padding=1, bias=False)
+            in_planes, planes, kernel_size=3, stride=stride, padding=1, bias=False
+        )
         self.bn1 = nn.BatchNorm2d(planes)
-        self.conv2 = nn.Conv2d(planes, planes, kernel_size=3,
-                               stride=1, padding=1, bias=False)
+        self.conv2 = nn.Conv2d(
+            planes, planes, kernel_size=3, stride=1, padding=1, bias=False
+        )
         self.bn2 = nn.BatchNorm2d(planes)
 
         self.shortcut = nn.Sequential()
-        if stride != 1 or in_planes != self.expansion*planes:
+        if stride != 1 or in_planes != self.expansion * planes:
             self.shortcut = nn.Sequential(
-                nn.Conv2d(in_planes, self.expansion*planes,
-                          kernel_size=1, stride=stride, bias=False),
-                nn.BatchNorm2d(self.expansion*planes)
+                nn.Conv2d(
+                    in_planes,
+                    self.expansion * planes,
+                    kernel_size=1,
+                    stride=stride,
+                    bias=False,
+                ),
+                nn.BatchNorm2d(self.expansion * planes),
             )
 
     def forward(self, x):
@@ -78,6 +83,7 @@ class BasicBlock(nn.Module):
         out += self.shortcut(x)
         out = F.relu(out)
         return out
+
 
 class Bottleneck(nn.Module):
     expansion = 4
@@ -199,8 +205,6 @@ def resnet50(pretrained=False):
     return model
 
 
-
-
 class Resnet_Backbone(nn.Module):
     def __init__(self):
         super(Resnet_Backbone, self).__init__()
@@ -220,6 +224,10 @@ class Resnet_Backbone(nn.Module):
         self.resnet_layer2 = resnet.layer2
         self.resnet_layer3 = resnet.layer3
         self.resnet_layer4 = resnet.layer4
+        self.resnet_avgpool = resnet.avgpool
+
+        num_features = resnet.fc.in_features
+        self.fc = nn.Linear(num_features, 2)
 
     def forward(self, x):
         x = self.resnet_conv1(x)
@@ -230,8 +238,10 @@ class Resnet_Backbone(nn.Module):
         x = self.resnet_layer2(x)
         x = self.resnet_layer3(x)
         x = self.resnet_layer4(x)
+        x = self.resnet_avgpool(x)
+        x = x.view(x.size(0), -1)
+        x = self.fc(x)
         return x
-
 
 
 class Resnet_Classification(nn.Module):
@@ -239,17 +249,13 @@ class Resnet_Classification(nn.Module):
 
         super(Resnet_Classification, self).__init__()
 
-        # backbone--------------------------------------------------------------------------
+        # backbone
         self.backbone = Resnet_Backbone()
-        
-
-       
 
     def forward(self, x):
         batch_size = x.size(0)
 
-        # backbone(Tensor T) ========================================================================================
-        resnet_features = self.backbone(x)  # ([N, 2048, 24, 8])
+        # backbone(Tensor T) 
+        resnet_features = self.backbone(x)  
 
         return resnet_features
-

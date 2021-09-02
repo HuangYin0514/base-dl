@@ -95,7 +95,7 @@ test_loader = torch.utils.data.DataLoader(
     test_dataset, batch_size=opt.test_batch_size, num_workers=opt.num_workers
 )
 # model ============================================================================================================
-model = Resnet18Custom()
+model = Resnet_Classification()
 model = model.to(device)
 if device == "cuda":
     model = torch.nn.DataParallel(model)
