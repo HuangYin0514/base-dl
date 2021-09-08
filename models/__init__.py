@@ -1,2 +1,4 @@
 from .cnn import *
 from .Resnet18Custom import Resnet_Classification
+from .Resnet_pcb import Resnet_pcb
+

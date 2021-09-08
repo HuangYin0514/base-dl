@@ -7,7 +7,6 @@ import torch
 import torch.optim as optim
 import torchvision.transforms as T
 import torch.nn.functional as F
-from torchvision import datasets
 
 import numpy as np
 
@@ -95,7 +94,7 @@ test_loader = torch.utils.data.DataLoader(
     test_dataset, batch_size=opt.test_batch_size, num_workers=opt.num_workers
 )
 # model ============================================================================================================
-model = Resnet_Classification()
+model = Resnet_pcb()
 model = model.to(device)
 if device == "cuda":
     model = torch.nn.DataParallel(model)
