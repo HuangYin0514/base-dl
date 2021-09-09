@@ -1,5 +1,6 @@
 import math
 
+import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torchvision import models
@@ -15,27 +16,27 @@ model_urls = {
 }
 
 
-# def weights_init_kaiming(m):
-#     classname = m.__class__.__name__
-#     if classname.find("Linear") != -1:
-#         nn.init.kaiming_normal_(m.weight, a=0, mode="fan_out")
-#         nn.init.constant_(m.bias, 0.0)
-#     elif classname.find("Conv") != -1:
-#         nn.init.kaiming_normal_(m.weight, a=0, mode="fan_in")
-#         if m.bias is not None:
-#             nn.init.constant_(m.bias, 0.0)
-#     elif classname.find("BatchNorm") != -1:
-#         if m.affine:
-#             nn.init.normal_(m.weight, 1.0, 0.02)
-#             nn.init.constant_(m.bias, 0.0)
+def weights_init_kaiming(m):
+    classname = m.__class__.__name__
+    if classname.find("Linear") != -1:
+        nn.init.kaiming_normal_(m.weight, a=0, mode="fan_out")
+        nn.init.constant_(m.bias, 0.0)
+    elif classname.find("Conv") != -1:
+        nn.init.kaiming_normal_(m.weight, a=0, mode="fan_in")
+        if m.bias is not None:
+            nn.init.constant_(m.bias, 0.0)
+    elif classname.find("BatchNorm") != -1:
+        if m.affine:
+            nn.init.normal_(m.weight, 1.0, 0.02)
+            nn.init.constant_(m.bias, 0.0)
 
 
-# def weights_init_classifier(m):
-#     classname = m.__class__.__name__
-#     if classname.find("Linear") != -1:
-#         nn.init.normal_(m.weight, std=0.001)
-#         if m.bias:
-#             nn.init.constant_(m.bias, 0.0)
+def weights_init_classifier(m):
+    classname = m.__class__.__name__
+    if classname.find("Linear") != -1:
+        nn.init.normal_(m.weight, std=0.001)
+        if m.bias:
+            nn.init.constant_(m.bias, 0.0)
 
 
 def conv3x3(in_planes, out_planes, stride=1):
@@ -81,6 +82,7 @@ class BasicBlock(nn.Module):
         out = self.relu(out)
 
         return out
+
 
 # resnet50 等网络
 class Bottleneck(nn.Module):
@@ -189,7 +191,6 @@ class ResNet(nn.Module):
         return x
 
 
-
 def resnet18(pretrained=False):
     """Constructs a ResNet-18 model.
     Args:
@@ -202,7 +203,6 @@ def resnet18(pretrained=False):
         now_state_dict.update(pretrained_state_dict)
         model.load_state_dict(now_state_dict)
     return model
-
 
 
 def resnet50(pretrained=False):
@@ -225,10 +225,10 @@ class Resnet_Backbone(nn.Module):
 
         # backbone--------------------------------------------------------------------------
         # change the model different from pcb
-        resnet = resnet18(pretrained=True)
+        resnet = resnet50(pretrained=True)
         # Modifiy the stride of last conv layer----------------------------
-        # resnet.layer4[0].downsample[0].stride = (1, 1)
-        # resnet.layer4[0].conv2.stride = (1, 1)
+        resnet.layer4[0].downsample[0].stride = (1, 1)
+        resnet.layer4[0].conv2.stride = (1, 1)
         # Remove avgpool and fc layer of resnet------------------------------
         self.resnet_conv1 = resnet.conv1
         self.resnet_bn1 = resnet.bn1
@@ -238,10 +238,6 @@ class Resnet_Backbone(nn.Module):
         self.resnet_layer2 = resnet.layer2
         self.resnet_layer3 = resnet.layer3
         self.resnet_layer4 = resnet.layer4
-        self.resnet_avgpool = resnet.avgpool
-
-        num_features = resnet.fc.in_features
-        self.fc = nn.Linear(num_features, 2)
 
     def forward(self, x):
         x = self.resnet_conv1(x)
@@ -252,24 +248,62 @@ class Resnet_Backbone(nn.Module):
         x = self.resnet_layer2(x)
         x = self.resnet_layer3(x)
         x = self.resnet_layer4(x)
-        x = self.resnet_avgpool(x)
-        x = x.view(x.size(0), -1)
-        x = self.fc(x)
+
         return x
 
 
 class Resnet_pcb(nn.Module):
-    def __init__(self):
+    def __init__(self, num_classes):
+
+        self.parts = 6
 
         super(Resnet_pcb, self).__init__()
 
         # backbone
         self.backbone = Resnet_Backbone()
 
+        # part(pcb）--------------------------------------------------------------------------
+        self.avgpool = nn.AdaptiveAvgPool2d((self.parts, 1))
+        self.local_conv_list = nn.ModuleList()
+        for _ in range(self.parts):
+            local_conv = nn.Sequential(
+                nn.Conv1d(2048, 256, kernel_size=1),
+                nn.BatchNorm1d(256),
+                nn.ReLU(inplace=True),
+            )
+            self.local_conv_list.append(local_conv)
+
+        # Classifier for each stripe （parts feature）-------------------------------------
+        self.parts_classifier_list = nn.ModuleList()
+        for _ in range(self.parts):
+            fc = nn.Linear(256, num_classes)
+            nn.init.normal_(fc.weight, std=0.001)
+            nn.init.constant_(fc.bias, 0)
+            self.parts_classifier_list.append(fc)
+
     def forward(self, x):
         batch_size = x.size(0)
 
-        # backbone(Tensor T) 
-        resnet_features = self.backbone(x)  
+        # backbone(Tensor T)
+        resnet_features = self.backbone(x)
 
-        return resnet_features
+        # parts --------------------------------------------------------------------------
+        features_G = self.avgpool(resnet_features)  # tensor g([N, 2048, 6, 1])
+        features_H = []  # contains 6 ([N, 256, 1])
+        for i in range(self.parts):
+            stripe_features_H = self.local_conv_list[i](features_G[:, :, i, :])
+            features_H.append(stripe_features_H)
+
+        ######################################################################################################################
+        # Return the features_H if inference--------------------------------------------------------------------------
+        if not self.training:
+            # features_H.append(gloab_features.unsqueeze_(2))  # ([N,1536+512])
+            v_g = torch.cat(features_H, dim=1)
+            v_g = F.normalize(v_g, p=2, dim=1)
+            return v_g.view(v_g.size(0), -1)
+
+        ######################################################################################################################
+        # classifier(parts)--------------------------------------------------------------------------
+        parts_score_list = [self.parts_classifier_list[i](features_H[i].view(batch_size, -1)) for i in range(self.parts)]  # shape list（[N, C=num_classes]）
+
+        return parts_score_list

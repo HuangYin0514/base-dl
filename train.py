@@ -123,7 +123,7 @@ gallery_loader = torch.utils.data.DataLoader(
 )
 
 # # model ============================================================================================================
-# model = Resnet_pcb()
+model = Resnet_pcb()
 # model = model.to(device)
 # if device == "cuda":
 #     model = torch.nn.DataParallel(model)
