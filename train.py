@@ -57,6 +57,8 @@ torch.backends.cudnn.deterministic = True
 torch.backends.cudnn.benchmark = True
 # device
 device = "cuda" if torch.cuda.is_available() else "cpu"
+if device == "cuda":
+    print("using cuda ...")
 # save dir path
 save_dir_path = os.path.join(opt.checkpoints_dir, opt.name)
 # Logger instance
