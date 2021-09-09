@@ -32,15 +32,17 @@ class Market1501(Dataset):
         self._check_before_run()
 
         self.dataset = self._process_dir(self.data_dir, relabel=relabel)
+        self.num_pids, self.num_imgs, self.num_cams = self._get_imagedata_info(self.dataset)
+
 
     def __getitem__(self, index):
-        img_path, label = self.dataset[index]
+        img_path, pid, camid = self.dataset[index]
         img = self._read_image(img_path)
 
         if self.transform is not None:
             img = self.transform(img)
 
-        return img, label
+        return img, pid, camid, img_path
 
     def __len__(self):
         return len(self.dataset)
@@ -96,3 +98,15 @@ class Market1501(Dataset):
                 )
                 pass
         return img
+
+    def _get_imagedata_info(self, data):
+        pids, cams = [], []
+        for _, pid, camid in data:
+            pids += [pid]
+            cams += [camid]
+        pids = set(pids)
+        cams = set(cams)
+        num_pids = len(pids)
+        num_cams = len(cams)
+        num_imgs = len(data)
+        return num_pids, num_imgs, num_cams

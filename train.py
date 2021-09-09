@@ -9,6 +9,7 @@ import torch.nn.functional as F
 import torch.optim as optim
 import torchvision.transforms as T
 
+from loss.crossEntropyLabelSmoothLoss import CrossEntropyLabelSmoothLoss
 from dataloader.collate_batch import train_collate_fn, val_collate_fn
 from dataloader.market1501 import Market1501
 from models import *
@@ -89,6 +90,9 @@ train_dataset = Market1501(
     transform=train_transforms,
     relabel=True,
 )
+
+num_classes = train_dataset.num_pids
+
 query_dataset = Market1501(
     root=opt.data_dir, data_folder="query", transform=train_transforms, relabel=False
 )
@@ -122,87 +126,96 @@ gallery_loader = torch.utils.data.DataLoader(
     collate_fn=val_collate_fn,
 )
 
-# # model ============================================================================================================
-model = Resnet_pcb()
-# model = model.to(device)
-# if device == "cuda":
-#     model = torch.nn.DataParallel(model)
+# model ============================================================================================================
+model = Resnet_pcb(num_classes)
+model = model.to(device)
+if device == "cuda":
+    model = torch.nn.DataParallel(model)
 
-# # criterion ============================================================================================================
-# criterion = F.cross_entropy
+# criterion ============================================================================================================
+criterion = F.cross_entropy
+ce_labelsmooth_loss = CrossEntropyLabelSmoothLoss(num_classes=num_classes)
 
-# # optimizer ============================================================================================================
+# optimizer ============================================================================================================
 # optimizer = optim.SGD(model.parameters(), lr=0.001, momentum=0.9)
+lr=0.1
+base_param_ids = set(map(id, model.backbone.parameters()))
+new_params = [p for p in model.parameters() if id(p) not in base_param_ids]
+param_groups = [{'params': model.backbone.parameters(), 'lr': lr/10},
+                {'params': new_params, 'lr': lr}]
+optimizer = torch.optim.SGD(param_groups, momentum=0.9, weight_decay=5e-4, nesterov=True)
 
 # # scheduler ============================================================================================================
 # scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=7, gamma=0.1)
+scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=20, gamma=0.1)
 
 
-# # Training and test ============================================================================================================
-# def train():
-#     start_time = time.time()
+# Training and test ============================================================================================================
+def train():
+    start_time = time.time()
 
-#     for epoch in range(opt.num_epochs):
-#         model.train()
+    for epoch in range(opt.num_epochs):
+        model.train()
 
-#         running_loss = 0.0
-#         running_corrects = 0
+        running_loss = 0.0
 
-#         for inputs, labels in train_loader:
-#             inputs, labels = inputs.to(device), labels.to(device)
-#             # net ---------------------
-#             optimizer.zero_grad()
-#             output = model(inputs)
+        for inputs, labels in train_loader:
+            inputs, labels = inputs.to(device), labels.to(device)
+            # net ---------------------
+            optimizer.zero_grad()
 
-#             _, preds = torch.max(output, 1)
+            parts_scores = model(inputs)
 
-#             loss = criterion(output, labels)
+            # parts loss-------------------------------------------------
+            part_loss = 0
+            for logits in parts_scores:
+                stripe_loss = ce_labelsmooth_loss(logits, labels)
+                part_loss += stripe_loss
 
-#             loss.backward()
-#             optimizer.step()
-#             # --------------------------
+            loss = part_loss
 
-#             running_loss += loss.item() * inputs.size(0)
-#             running_corrects += torch.sum(preds == labels.data)
+            loss.backward()
+            optimizer.step()
+            # --------------------------
 
-#         # scheduler
-#         scheduler.step()
+            running_loss += loss.item() * inputs.size(0)
+            
 
-#         # print train infomation
-#         if epoch % 1 == 0:
-#             epoch_loss = running_loss / len(train_loader.dataset)
-#             epoch_acc = running_corrects.double() / len(train_loader.dataset)
-#             time_remaining = (
-#                 (opt.num_epochs - epoch) * (time.time() - start_time) / (epoch + 1)
-#             )
+        # scheduler
+        scheduler.step()
 
-#             logger.info(
-#                 "Epoch:{}/{} \tTrain Loss:{:.4f} \tAcc:{:.4f} \tETA:{:.0f}h{:.0f}m".format(
-#                     epoch + 1,
-#                     opt.num_epochs,
-#                     epoch_loss,
-#                     epoch_acc,
-#                     time_remaining // 3600,
-#                     time_remaining / 60 % 60,
-#                 )
-#             )
+        # print train infomation
+        if epoch % 1 == 0:
+            epoch_loss = running_loss / len(train_loader.dataset)
+            time_remaining = (
+                (opt.num_epochs - epoch) * (time.time() - start_time) / (epoch + 1)
+            )
 
-#             # plot curve
-#             curve.x_train_epoch_loss.append(epoch + 1)
-#             curve.y_train_loss.append(epoch_loss)
-#             curve.x_train_epoch_acc.append(epoch + 1)
-#             curve.y_train_acc.append(epoch_acc)
+            logger.info(
+                "Epoch:{}/{} \tTrain Loss:{:.4f} \tETA:{:.0f}h{:.0f}m".format(
+                    epoch + 1,
+                    opt.num_epochs,
+                    epoch_loss,
+                    time_remaining // 3600,
+                    time_remaining / 60 % 60,
+                )
+            )
 
-#         # test
-#         if epoch % 1 == 0:
-#             test(epoch)
+            # plot curve
+            curve.x_epoch_loss.append(epoch + 1)
+            curve.y_train_loss.append(epoch_loss)
+           
 
-#     # Save the loss curve
-#     curve.save_curve()
-#     # Save final model weights
-#     load_network.save_network(model, save_dir_path, "final")
+        # test
+        # if epoch % 1 == 0:
+        #     test(epoch)
 
-#     print("training is done !")
+    # Save the loss curve
+    curve.save_curve()
+    # Save final model weights
+    load_network.save_network(model, save_dir_path, "final")
+
+    print("training is done !")
 
 
 # def test(epoch):
@@ -244,5 +257,5 @@ model = Resnet_pcb()
 #     # print("test is done !")
 
 
-# if __name__ == "__main__":
-#     train()
+if __name__ == "__main__":
+    train()
