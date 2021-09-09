@@ -188,7 +188,7 @@ def train():
         scheduler.step()
 
         # print train infomation
-        if epoch % 10 == 0:
+        if epoch % 2 == 0:
             epoch_loss = running_loss / len(train_loader.dataset)
             time_remaining = (
                 (opt.num_epochs - epoch) * (time.time() - start_time) / (epoch + 1)
@@ -209,9 +209,7 @@ def train():
             curve.y_train_loss.append(epoch_loss)
 
         # test
-        if epoch % 10 == 0:
-            test(epoch)
-
+        if epoch % 2 == 0:
             # test current datset-------------------------------------
             torch.cuda.empty_cache()
             CMC, mAP = test(epoch)
