@@ -19,7 +19,7 @@ from utils import draw_curve, load_network, logger, util
 parser = argparse.ArgumentParser(description="Base Dl")
 # base (env setting)
 parser.add_argument("--checkpoints_dir", type=str, default="./checkpoints")
-parser.add_argument("--name", type=str, default="hymenoptera")
+parser.add_argument("--name", type=str, default="person_reid")
 # data
 parser.add_argument(
     "--data_dir", type=str, default="./datasets/Market-1501-v15.09.15_reduce"
