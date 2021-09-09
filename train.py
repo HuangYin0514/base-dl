@@ -13,7 +13,7 @@ from loss.crossEntropyLabelSmoothLoss import CrossEntropyLabelSmoothLoss
 from dataloader.collate_batch import train_collate_fn, val_collate_fn
 from dataloader.market1501 import Market1501
 from models import *
-from utils import draw_curve, load_network, logger, util
+from utils import draw_curve, load_network, logger, util, reid_util
 
 # opt ==============================================================================
 parser = argparse.ArgumentParser(description="Base Dl")
@@ -138,12 +138,16 @@ ce_labelsmooth_loss = CrossEntropyLabelSmoothLoss(num_classes=num_classes)
 
 # optimizer ============================================================================================================
 # optimizer = optim.SGD(model.parameters(), lr=0.001, momentum=0.9)
-lr=0.1
+lr = 0.1
 base_param_ids = set(map(id, model.backbone.parameters()))
 new_params = [p for p in model.parameters() if id(p) not in base_param_ids]
-param_groups = [{'params': model.backbone.parameters(), 'lr': lr/10},
-                {'params': new_params, 'lr': lr}]
-optimizer = torch.optim.SGD(param_groups, momentum=0.9, weight_decay=5e-4, nesterov=True)
+param_groups = [
+    {"params": model.backbone.parameters(), "lr": lr / 10},
+    {"params": new_params, "lr": lr},
+]
+optimizer = torch.optim.SGD(
+    param_groups, momentum=0.9, weight_decay=5e-4, nesterov=True
+)
 
 # # scheduler ============================================================================================================
 # scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=7, gamma=0.1)
@@ -179,13 +183,12 @@ def train():
             # --------------------------
 
             running_loss += loss.item() * inputs.size(0)
-            
 
         # scheduler
         scheduler.step()
 
         # print train infomation
-        if epoch % 1 == 0:
+        if epoch % 10 == 0:
             epoch_loss = running_loss / len(train_loader.dataset)
             time_remaining = (
                 (opt.num_epochs - epoch) * (time.time() - start_time) / (epoch + 1)
@@ -204,11 +207,20 @@ def train():
             # plot curve
             curve.x_epoch_loss.append(epoch + 1)
             curve.y_train_loss.append(epoch_loss)
-           
 
         # test
-        # if epoch % 1 == 0:
-        #     test(epoch)
+        if epoch % 10 == 0:
+            test(epoch)
+
+            # test current datset-------------------------------------
+            torch.cuda.empty_cache()
+            CMC, mAP = test(epoch)
+            logger.info('Testing: top1:%.4f top5:%.4f top10:%.4f mAP:%.4f' % (CMC[0], CMC[4], CMC[9], mAP))
+
+            curve.x_epoch_test.append(epoch + 1)
+            curve.y_test['top1'].append(CMC[0])
+            curve.y_test['mAP'].append(mAP)
+           
 
     # Save the loss curve
     curve.save_curve()
@@ -218,43 +230,74 @@ def train():
     print("training is done !")
 
 
-# def test(epoch):
-#     model.eval()
+@torch.no_grad()
+def test(epoch, normalize_feature=True, dist_metric="cosine"):
+    model.eval()
 
-#     test_loss = 0.0
-#     test_corrects = 0
+    # Extracting features from query set------------------------------------------------------------
+    print("Extracting features from query set ...")
+    qf, q_pids, q_camids = (
+        [],
+        [],
+        [],
+    )  # query features, query person IDs and query camera IDs
+    for _, data in enumerate(query_loader):
+        imgs, pids, camids = reid_util._parse_data_for_eval(data)
+        imgs = imgs.to(device)
+        features = reid_util._extract_features(model, imgs)
+        qf.append(features)
+        q_pids.extend(pids)
+        q_camids.extend(camids)
+    qf = torch.cat(qf, 0)
+    q_pids = np.asarray(q_pids)
+    q_camids = np.asarray(q_camids)
+    print("Done, obtained {}-by-{} matrix".format(qf.size(0), qf.size(1)))
 
-#     for inputs, labels in test_loader:
-#         inputs, labels = inputs.to(device), labels.to(device)
-#         # net ---------------------
-#         output = model(inputs)
+    # Extracting features from gallery set------------------------------------------------------------
+    print("Extracting features from gallery set ...")
+    gf, g_pids, g_camids = (
+        [],
+        [],
+        [],
+    )  # gallery features, gallery person IDs and gallery camera IDs
+    for _, data in enumerate(gallery_loader):
+        imgs, pids, camids = reid_util._parse_data_for_eval(data)
+        imgs = imgs.to(device)
+        features = reid_util._extract_features(model, imgs)
+        gf.append(features)
+        g_pids.extend(pids)
+        g_camids.extend(camids)
+    gf = torch.cat(gf, 0)
+    g_pids = np.asarray(g_pids)
+    g_camids = np.asarray(g_camids)
+    print("Done, obtained {}-by-{} matrix".format(gf.size(0), gf.size(1)))
 
-#         _, preds = torch.max(output, 1)
+    # normalize_feature------------------------------------------------------------------------------
+    if normalize_feature:
+        print("Normalzing features with L2 norm ...")
+        qf = F.normalize(qf, p=2, dim=1)
+        gf = F.normalize(gf, p=2, dim=1)
 
-#         loss = criterion(output, labels)
-#         # --------------------------
+    # Computing distance matrix------------------------------------------------------------------------
+    print("Computing distance matrix with metric={} ...".format(dist_metric))
+    qf = np.array(qf.cpu())
+    gf = np.array(gf.cpu())
+    dist = reid_util.cosine_dist(qf, gf)
+    rank_results = np.argsort(dist)[:, ::-1]
 
-#         test_loss += loss.item() * inputs.size(0)
-#         test_corrects += torch.sum(preds == labels.data)
+    # Computing CMC and mAP------------------------------------------------------------------------
+    print("Computing CMC and mAP ...")
+    APs, CMC = [], []
+    for _, data in enumerate(zip(rank_results, q_camids, q_pids)):
+        a_rank, query_camid, query_pid = data
+        ap, cmc = reid_util.compute_AP(a_rank, query_camid, query_pid, g_camids, g_pids)
+        APs.append(ap), CMC.append(cmc)
+    MAP = np.array(APs).mean()
+    min_len = min([len(cmc) for cmc in CMC])
+    CMC = [cmc[:min_len] for cmc in CMC]
+    CMC = np.mean(np.array(CMC), axis=0)
 
-#     # print test infomation
-#     if epoch % 1 == 0:
-#         epoch_loss = test_loss / len(test_loader.dataset)
-#         epoch_acc = test_corrects.double() / len(test_loader.dataset)
-
-#         logger.info(
-#             "Epoch:{}/{} \tTest Loss:{:.4f} \tAcc:{:.4f}".format(
-#                 epoch + 1,
-#                 opt.num_epochs,
-#                 epoch_loss,
-#                 epoch_acc,
-#             )
-#         )
-
-#         curve.x_test_epoch_acc.append(epoch + 1)
-#         curve.y_test_acc.append(epoch_acc)
-
-#     # print("test is done !")
+    return CMC, MAP
 
 
 if __name__ == "__main__":

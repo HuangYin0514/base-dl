@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 
 # Suppress pop-up windows during debugging
 matplotlib.use("agg")
-# self.fig.tight_layout() # 防止图像重叠
+
 class Draw_Curve:
     def __init__(self, dir_path):
 
@@ -13,6 +13,8 @@ class Draw_Curve:
 
         # Draw curve
         self.fig = plt.figure(clear=True)
+        self.fig.tight_layout() # 防止图像重叠
+
         self.ax0 = self.fig.add_subplot(121, title="Training loss")
         self.ax1 = self.fig.add_subplot(122, title="Testing CMC/mAP")
         self.x_epoch_loss = []
