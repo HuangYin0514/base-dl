@@ -129,8 +129,6 @@ gallery_loader = torch.utils.data.DataLoader(
 # model ============================================================================================================
 model = Resnet_pcb(num_classes)
 model = model.to(device)
-# if device == "cuda":
-#     model = torch.nn.DataParallel(model)
 
 # criterion ============================================================================================================
 criterion = F.cross_entropy
