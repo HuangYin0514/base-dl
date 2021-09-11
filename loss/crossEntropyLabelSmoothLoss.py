@@ -34,3 +34,5 @@ class CrossEntropyLabelSmoothLoss(nn.Module):
         targets = (1 - self.epsilon) * targets + self.epsilon / self.num_classes
         loss = (- targets * log_probs).mean(0).sum()
         return loss
+
+
