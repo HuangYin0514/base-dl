@@ -63,25 +63,9 @@ torch.backends.cudnn.benchmark = True
 device = "cuda" if torch.cuda.is_available() else "cpu"
 if device == "cuda":
     print("using cuda ...")
-# save dir path
-save_dir_path = os.path.join(opt.checkpoints_dir, opt.name)
-# Logger instance
-logger = logger.Logger(save_dir_path)
-# draw curve instance
-curve = draw_curve.Draw_Curve(save_dir_path)
 
 # data ============================================================================================================
-# data Augumentation
-train_transforms = T.Compose(
-    [
-        T.Resize((opt.img_height, opt.img_width), interpolation=3),
-        T.RandomHorizontalFlip(),
-        T.ToTensor(),
-        T.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
-    ]
-)
-
-test_transforms = T.Compose(
+test_transforms = transform = T.Compose(
     [
         T.Resize((opt.img_height, opt.img_width), interpolation=3),
         T.ToTensor(),
@@ -89,23 +73,14 @@ test_transforms = T.Compose(
     ]
 )
 
-# data loader
-train_dataset = Market1501(
-    root=opt.data_dir,
-    data_folder="bounding_box_train",
-    transform=train_transforms,
-    relabel=True,
-)
-
-num_classes = train_dataset.num_pids
 
 query_dataset = Market1501(
-    root=opt.data_dir, data_folder="query", transform=test_transforms, relabel=False
+    root=opt.data_dir, data_folder="query", transform=train_transforms, relabel=False
 )
 gallery_dataset = Market1501(
     root=opt.data_dir,
     data_folder="bounding_box_test",
-    transform=test_transforms,
+    transform=train_transforms,
     relabel=False,
 )
 

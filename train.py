@@ -95,12 +95,12 @@ train_dataset = Market1501(
 num_classes = train_dataset.num_pids
 
 query_dataset = Market1501(
-    root=opt.data_dir, data_folder="query", transform=train_transforms, relabel=False
+    root=opt.data_dir, data_folder="query", transform=test_transforms, relabel=False
 )
 gallery_dataset = Market1501(
     root=opt.data_dir,
     data_folder="bounding_box_test",
-    transform=train_transforms,
+    transform=test_transforms,
     relabel=False,
 )
 
