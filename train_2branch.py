@@ -22,13 +22,13 @@ parser = argparse.ArgumentParser(description="Base Dl")
 parser.add_argument("--checkpoints_dir", type=str, default="./checkpoints")
 parser.add_argument("--name", type=str, default="person_reid")
 # data
-# parser.add_argument(
-#     "--data_dir", type=str, default="./datasets/Market-1501-v15.09.15_reduce"
-# )
 parser.add_argument(
-    "--data_dir", type=str, default="./datasets/Market-1501-v15.09.15"
+    "--data_dir", type=str, default="./datasets/Market-1501-v15.09.15_reduce"
 )
-parser.add_argument("--batch_size", default=128, type=int)
+# parser.add_argument(
+#     "--data_dir", type=str, default="./datasets/Market-1501-v15.09.15"
+# )
+parser.add_argument("--batch_size", default=20, type=int)
 parser.add_argument("--test_batch_size", default=128, type=int)
 parser.add_argument("--num_workers", default=0, type=int)
 # train
