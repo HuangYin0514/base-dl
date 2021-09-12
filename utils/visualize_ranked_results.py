@@ -4,7 +4,7 @@ import shutil
 import os.path as osp
 import cv2
 
-
+from .util import mkdir
 
 __all__ = ['visualize_ranked_results']
 
@@ -99,7 +99,6 @@ def visualize_ranked_results(
             qdir = osp.join(
                 save_dir, osp.basename(osp.splitext(qimg_path_name)[0])
             )
-            mkdir_if_missing(qdir)
             _cp_img_to(qimg_path, qdir, rank=0, prefix='query')
 
         rank_idx = 1
@@ -143,9 +142,11 @@ def visualize_ranked_results(
 
         if data_type == 'image':
             imname = osp.basename(osp.splitext(qimg_path_name)[0])
-            cv2.imwrite(osp.join(save_dir, imname + '.jpg'), grid_img)
+            save_path = save_dir+'/identification/'
+            mkdir(save_path)
+            cv2.imwrite(osp.join(save_path,imname + '.jpg'), grid_img)
 
         if (q_idx+1) % 100 == 0:
             print('- done {}/{}'.format(q_idx + 1, num_q))
 
-    print('Done. Images have been saved to "{}" ...'.format(save_dir))
+    print('Done. Images have been saved to "{}" ...'.format(save_path))

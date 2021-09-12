@@ -32,8 +32,8 @@ parser.add_argument("--num_workers", default=0, type=int)
 # train
 parser.add_argument("--num_epochs", type=int, default=2)
 # other
-parser.add_argument("--img_height", type=int, default=4)
-parser.add_argument("--img_width", type=int, default=2)
+parser.add_argument("--img_height", type=int, default=128)
+parser.add_argument("--img_width", type=int, default=64)
 
 # parser.add_argument("--Resize", type=int, default=2)
 # parser.add_argument("--CenterCrop", type=int, default=2)
@@ -160,7 +160,7 @@ def test(epoch, normalize_feature=True, dist_metric="cosine"):
 
     visualize_ranked_results.visualize_ranked_results(
         dist,
-        dataset = (query_dataset, gallery_dataset),
+        dataset = (query_dataset.dataset, gallery_dataset.dataset),
         data_type="image",
         width=opt.img_width,
         height=opt.img_height,
