@@ -72,3 +72,4 @@ def compute_AP(a_rank, query_camid, query_pid, gallery_camids, gallery_pids, mod
         cmc[index_hit[0]:] = 1
     return AP, cmc
 
+    
