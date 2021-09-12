@@ -35,6 +35,9 @@ parser.add_argument("--num_epochs", type=int, default=2)
 parser.add_argument("--img_height", type=int, default=128)
 parser.add_argument("--img_width", type=int, default=64)
 
+parser.add_argument(
+    "--model_path", type=str, default="./checkpoints/person_reid/net_final-2.pth"
+)
 # parser.add_argument("--Resize", type=int, default=2)
 # parser.add_argument("--CenterCrop", type=int, default=2)
 
@@ -101,8 +104,7 @@ gallery_loader = torch.utils.data.DataLoader(
 
 # model ============================================================================================================
 model = Resnet_pcb_3branch(1)
-filepath= "/Users/huangyin/Documents/project/base-dl/checkpoints/person_reid/net_final-2.pth"
-model = util.load_network(model, filepath)
+model = util.load_network(model, opt.model_path)
 model = model.to(device)
 
 
