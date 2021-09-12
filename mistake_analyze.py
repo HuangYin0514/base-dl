@@ -162,6 +162,25 @@ def test(epoch, normalize_feature=True, dist_metric="cosine"):
     gf = np.array(gf.cpu())
     dist = reid_util.cosine_dist(qf, gf)
 
+    rank_results = np.argsort(dist)[:, ::-1]
+
+    # Computing CMC and mAP------------------------------------------------------------------------
+    print("Computing CMC and mAP ...")
+    APs, CMC = [], []
+    for _, data in enumerate(zip(rank_results, q_camids, q_pids)):
+        a_rank, query_camid, query_pid = data
+        ap, cmc = reid_util.compute_AP(a_rank, query_camid, query_pid, g_camids, g_pids)
+        APs.append(ap), CMC.append(cmc)
+    MAP = np.array(APs).mean()
+    min_len = min([len(cmc) for cmc in CMC])
+    CMC = [cmc[:min_len] for cmc in CMC]
+    CMC = np.mean(np.array(CMC), axis=0)
+
+    print(
+                "Testing: top1:%.4f top5:%.4f top10:%.4f mAP:%.4f"
+                % (CMC[0], CMC[4], CMC[9], MAP)
+            )
+
     visualize_ranked_results.visualize_ranked_results(
         dist,
         dataset = (query_dataset.dataset, gallery_dataset.dataset),
