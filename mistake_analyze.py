@@ -101,6 +101,8 @@ gallery_loader = torch.utils.data.DataLoader(
 
 # model ============================================================================================================
 model = Resnet_pcb_3branch(1)
+filepath= "/Users/huangyin/Documents/project/base-dl/checkpoints/person_reid/net_final-2.pth"
+model = util.load_network(model, filepath)
 model = model.to(device)
 
 
