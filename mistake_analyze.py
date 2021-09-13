@@ -4,15 +4,15 @@ import random
 import time
 
 import numpy as np
+import scipy.io
 import torch
 import torch.nn.functional as F
-
 import torchvision.transforms as T
 
 from dataloader.collate_batch import val_collate_fn
 from dataloader.market1501 import Market1501
 from models import *
-from utils import util, visualize_ranked_results,reid_util
+from utils import reid_util, util, visualize_ranked_results
 
 # opt ==============================================================================
 parser = argparse.ArgumentParser(description="Base Dl")
@@ -160,36 +160,10 @@ def test(epoch, normalize_feature=True, dist_metric="cosine"):
     print("Computing distance matrix with metric={} ...".format(dist_metric))
     qf = np.array(qf.cpu())
     gf = np.array(gf.cpu())
-    dist = reid_util.cosine_dist(qf, gf)
 
-    rank_results = np.argsort(dist)[:, ::-1]
-
-    # Computing CMC and mAP------------------------------------------------------------------------
-    print("Computing CMC and mAP ...")
-    APs, CMC = [], []
-    for _, data in enumerate(zip(rank_results, q_camids, q_pids)):
-        a_rank, query_camid, query_pid = data
-        ap, cmc = reid_util.compute_AP(a_rank, query_camid, query_pid, g_camids, g_pids)
-        APs.append(ap), CMC.append(cmc)
-    MAP = np.array(APs).mean()
-    min_len = min([len(cmc) for cmc in CMC])
-    CMC = [cmc[:min_len] for cmc in CMC]
-    CMC = np.mean(np.array(CMC), axis=0)
-
-    print(
-                "Testing: top1:%.4f top5:%.4f top10:%.4f mAP:%.4f"
-                % (CMC[0], CMC[4], CMC[9], MAP)
-            )
-
-    visualize_ranked_results.visualize_ranked_results(
-        dist,
-        dataset = (query_dataset.dataset, gallery_dataset.dataset),
-        data_type="image",
-        width=opt.img_width,
-        height=opt.img_height,
-        save_dir=save_dir_path,
-        topk=10,
-    )
+    # Save to Matlab for check
+    result = {'gallery_f':gf,'gallery_label':g_pids,'gallery_cam':g_camids,'query_f':qf,'query_label':q_pids,'query_cam':q_camids}
+    scipy.io.savemat('pytorch_result.mat',result)
 
 
 if __name__ == "__main__":

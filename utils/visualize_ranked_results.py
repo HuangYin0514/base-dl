@@ -104,6 +104,7 @@ def visualize_ranked_results(
 
             if not invalid:
                 matched = gpid == qpid
+
                 if data_type == "image":
                     border_color = GREEN if matched else RED
                     gimg = cv2.imread(gimg_path)
