@@ -29,8 +29,6 @@ class Market1501(Dataset):
         self.dataset_dir = os.path.join(root, self.dataset_dir)
         self.data_dir = os.path.join(self.dataset_dir, data_folder)
 
-        self._check_before_run()
-
         self.dataset = self._process_dir(self.data_dir, relabel=relabel)
         self.num_pids, self.num_imgs, self.num_cams = self._get_imagedata_info(self.dataset)
 
@@ -46,13 +44,6 @@ class Market1501(Dataset):
 
     def __len__(self):
         return len(self.dataset)
-
-    def _check_before_run(self):
-        """Check if all files are available before going deeper"""
-        if not os.path.exists(self.dataset_dir):
-            raise RuntimeError("'{}' is not available".format(self.dataset_dir))
-        if not os.path.exists(self.data_dir):
-            raise RuntimeError("'{}' is not available".format(self.data_dir))
 
     def _process_dir(self, dir_path, relabel=False):
         img_paths = glob.glob(os.path.join(dir_path, "*.jpg"))
