@@ -5,6 +5,7 @@ def _parse_data_for_eval(data):
     imgs = data[0]
     pids = data[1]
     camids = data[2]
+    
     return imgs, pids, camids
 
 
